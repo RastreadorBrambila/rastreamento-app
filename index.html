@@ -156,21 +156,23 @@
       <label>Localização:</label>
       <input type="text" id="localizacao" placeholder="Ex: São Paulo - SP">
 
+      <label>Nota 2 do Sistema (Opcional):</label>
+      <input type="text" id="nota2" placeholder="Ex: ORIGEM = CIDADE - UF = SAIDA = DD/MM > HH:MM || DESTINO = CIDADE - UF = CHEGADA = X-X">
+
       <div class="linha">
         <div>
-          <label>Origem:</label>
+          <label>Origem (Manual):</label>
           <input type="text" id="origem">
         </div>
         <div>
-          <label>Destino:</label>
+          <label>Destino (Manual):</label>
           <input type="text" id="destino">
         </div>
       </div>
 
       <label>Situação:</label>
       <select id="situacao" onchange="mostrarCamposCercaFora()">
-        <option value="">Selecione a Situação</option> <!-- Opção em branco -->
-        <!-- <option value="POSTO PROIBIDO" selected>POSTO PROIBIDO</option> --> <!-- Opção padrão "POSTO PROIBIDO" -->
+        <option value="">Selecione a Situação</option>
         <option value="CERCA FORA">CERCA FORA</option>
         <option value="ROUBO CONFIRMADO">ROUBO CONFIRMADO</option>
         <option value="SUSPEITA DE ROUBO">SUSPEITA DE ROUBO</option>
@@ -259,23 +261,51 @@
       }
     }
 
+    function extrairOrigemDestino(nota2Texto) {
+      let origemExtraida = "";
+      let destinoExtraido = "";
+
+      const regexOrigem = /ORIGEM\s*=\s*([^=]+?)\s*=\s*SAIDA/;
+      const matchOrigem = nota2Texto.match(regexOrigem);
+      if (matchOrigem && matchOrigem[1]) {
+        origemExtraida = matchOrigem[1].trim();
+      }
+
+      const regexDestino = /DESTINO\s*=\s*([^=]+?)\s*=\s*CHEGADA/;
+      const matchDestino = nota2Texto.match(regexDestino);
+      if (matchDestino && matchDestino[1]) {
+        destinoExtraido = matchDestino[1].trim();
+      }
+
+      return { origem: origemExtraida, destino: destinoExtraido };
+    }
+
     function gerarMensagens() {
       const motorista = document.getElementById("motorista").value;
       const placa = document.getElementById("placa").value;
       const modeloCarreta = document.getElementById("modeloCarreta").value;
       const localizacao = document.getElementById("localizacao").value;
-      const origem = document.getElementById("origem").value;
-      const destino = document.getElementById("destino").value;
-      const hora = document.getElementById("hora") ? document.getElementById("hora").value : "";
+      const nota2 = document.getElementById("nota2").value;
       const situacao = document.getElementById("situacao").value;
       const ocorrido = document.getElementById("ocorrido").value;
       const kmDiferenca = document.getElementById("kmDiferenca") ? document.getElementById("kmDiferenca").value : "";
+      const hora = document.getElementById("hora") ? document.getElementById("hora").value : "";
+
+      let origemFinal = document.getElementById("origem").value;
+      let destinoFinal = document.getElementById("destino").value;
+
+      // Se a Nota 2 for preenchida, tenta extrair origem e destino dela
+      if (nota2) {
+        const { origem, destino } = extrairOrigemDestino(nota2);
+        if (origem) origemFinal = origem;
+        if (destino) destinoFinal = destino;
+      }
 
       let whats = `
 *Motorista:* ${motorista}
 *Placa:* ${placa} ${modeloCarreta}
 *Localização:* ${localizacao}
-*Rota:* ${origem} x ${destino}
+*Rota:* ${origemFinal} x ${destinoFinal}
 *Situação:* ${situacao}
 *Ocorrência:* ${ocorrido}
       `;
@@ -297,7 +327,7 @@
         email = `
 CERCA FORA - ${motorista} - ${placa}
 
-ITINERÁRIO: ${origem} x ${destino}
+ITINERÁRIO: ${origemFinal} x ${destinoFinal}
 HORA: ${hora}
 
 OCORRIDO: ${ocorrido}
